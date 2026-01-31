@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>メルカリ利益計算機 - iPhone風</title>
+  <style>
+    :root {
+      --main-bg: #f5f5f7;
+      --card-bg: #fff;
+      --accent: #007aff;
+      --input-bg: #f2f2f7;
+      --border: #dadada;
+      --shadow: 0 2px 8px rgba(70,80,110,0.07);
+      --radius: 18px;
+      --title: #1c1c1e;
+      --label: #7a7a85;
+      --profit-pos: #28b14a;
+      --profit-neg: #fa3a2f;
+      --field-border: #eaecf1;
+      --input-color: #161617;
+    }
+
+    body {
+      background: var(--main-bg);
+      min-height: 100vh;
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans JP', 'Yu Gothic', 'Meiryo', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .container {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 410px;
+      width: 100vw;
+      margin: 36px auto 0;
+      padding: 22px 22px 15px 22px;
+      box-sizing: border-box;
+    }
+    h2 {
+      text-align: center;
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 1.35em;
+      letter-spacing: 1.5px;
+      margin-bottom: 1.1em;
+      margin-top: 0.7em;
+    }
+    .fields {
+      margin-top: 0.7em;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.18em;
+    }
+    .row label {
+      flex: 0 0 80px;
+      font-size: 1.04em;
+      color: var(--label);
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+    .row input, 
+    .row select {
+      flex: 1 1 auto;
+      font-size: 1.11em;
+      padding: 9px 12px;
+      border: 1.4px solid var(--field-border);
+      border-radius: 11px;
+      background: var(--input-bg);
+      color: var(--input-color);
+      transition: border 0.2s;
+      margin-left: 10px;
+      box-sizing: border-box;
+      outline-color: var(--accent);
+    }
+    .row select {
+      min-width: 0;
+      cursor: pointer;
+    }
+    .fee-preview {
+      border-radius: 10px;
+      padding: 9px 10px 8px 10px;
+      background: #f2f2f7;
+      margin-left: 10px;
+      border: 1.1px solid #e7eaf2;
+      font-size: 1.07em;
+      color: #5984be;
+      min-width: 0;
+    }
+    .result-box {
+      background: #f7f8fa;
+      border-radius: 15px;
+      border: 1.1px solid #e6e6ee;
+      margin-top: 26px;
+      padding: 24px 13px 17px;
+      text-align: center;
+      box-shadow: 0 4px 9px rgba(109,124,200,0.04);
+    }
+    .profit {
+      font-size: 1.55em;
+      margin-bottom: 0.14em;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    .profit.positive {
+      color: var(--profit-pos);
+      text-shadow: 0 1px 4px #addcbf44;
+    }
+    .profit.negative {
+      color: var(--profit-neg);
+      text-shadow: 0 1px 4px #f9bcbc33;
+    }
+    .margin-label, .result-label {
+      display: block;
+      color: #55647a;
+      font-size: 1em;
+      margin-bottom: 0;
+      font-weight: 500;
+    }
+    .margin-value {
+      font-size: 1.08em;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+      font-weight: bold;
+      margin-bottom: 0.7em;
+    }
+    footer {
+      margin-top: 22px;
+      text-align: right;
+      font-size: 0.96em;
+      color: #b0b3bb;
+    }
+    @media (max-width: 480px) {
+      .container { max-width: 99vw; padding: 18px 5vw;}
+      .row label {flex-basis: 80px;}
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="number"] { -moz-appearance:textfield;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>メルカリ利益計算機</h2>
+    <div class="fields">
+      <div class="row">
+        <label for="price">売上</label>
+        <input type="number" id="price" min="1" step="1" placeholder="金額">
+      </div>
+      <div class="row">
+        <label for="fee">手数料</label>
+        <span id="fee-value" class="fee-preview">-</span>
+      </div>
+      <div class="row">
+        <label for="shipping">送料</label>
+        <select id="shipping">
+          <optgroup label="【らくらくメルカリ便】">
+            <option value="210">ネコポス ¥210</option>
+            <option value="520">宅急便コンパクト (¥450+BOX¥70) ¥520</option>
+            <option value="750">宅急便 60サイズ ¥750</option>
+            <option value="850">宅急便 80サイズ ¥850</option>
+            <option value="1050">宅急便 100サイズ ¥1,050</option>
+          </optgroup>
+          <optgroup label="【ゆうゆうメルカリ便】">
+            <option value="230">ゆうパケット ¥230</option>
+            <option value="220">ゆうパケットポスト (¥215+シール¥5) ¥220</option>
+            <option value="520">ゆうパケットプラス (¥455+BOX¥65) ¥520</option>
+            <option value="770">ゆうパック 60サイズ ¥770</option>
+            <option value="870">ゆうパック 80サイズ ¥870</option>
+          </optgroup>
+          <optgroup label="【その他】">
+            <option value="custom">普通郵便/定形外 (手入力)</option>
+            <option value="0">無料(送料なし)</option>
+          </optgroup>
+        </select>
+        <input type="number" id="shipping-custom" placeholder="直接入力" min="0" style="display:none; width:120px; margin-left:8px;">
+      </div>
+    </div>
+    <div class="result-box" id="result">
+      <span class="result-label">利益</span>
+      <div class="profit positive" id="profit">-</div>
+      <span class="margin-label">利益率</span>
+      <div class="margin-value" id="margin">-</div>
+    </div>
+    <footer>
+      ⓒ Mercari 利益計算
+    </footer>
+    <script>
+      // 要素の取得
+      const priceEl = document.getElementById('price');
+      const feeEl = document.getElementById('fee-value');
+      const shippingEl = document.getElementById('shipping');
+      const shippingCustomEl = document.getElementById('shipping-custom');
+      const profitEl = document.getElementById('profit');
+      const marginEl = document.getElementById('margin');
+
+      // 保存読み込み
+      function restoreLocalStorage() {
+        const price = localStorage.getItem('mercari_price');
+        const shipping = localStorage.getItem('mercari_shipping');
+        const shippingCustom = localStorage.getItem('mercari_shipping_custom');
+        if (price !== null) priceEl.value = price;
+        if (shipping !== null) shippingEl.value = shipping;
+        if (shippingCustom !== null) shippingCustomEl.value = shippingCustom;
+      }
+
+      restoreLocalStorage();
+
+      function saveLocalStorage() {
+        localStorage.setItem('mercari_price', priceEl.value);
+        localStorage.setItem('mercari_shipping', shippingEl.value);
+        localStorage.setItem('mercari_shipping_custom', shippingCustomEl.value);
+      }
+
+      function getNumberInputValue(el) {
+        // 入力欄が空、null、または数値以外 → 0
+        const val = el.value;
+        if (val === "" || val === null || isNaN(val)) return 0;
+        return Number(val);
+      }
+
+      // 送料値の汎用取得
+      function getShippingValue() {
+        if (shippingEl.value === "custom") {
+          return getNumberInputValue(shippingCustomEl);
+        } else {
+          // select の value（数値文字列）→ Numberへ
+          const selVal = shippingEl.value;
+          if (selVal === "" || selVal === null || isNaN(selVal)) return 0;
+          return Number(selVal);
+        }
+      }
+
+      // 計算
+      function calc() {
+        // すべての値を0デフォルトにして取得
+        const price = getNumberInputValue(priceEl);
+        // 手入力送料
+        const shipping = getShippingValue();
+
+        // 手数料10%で小数切り捨て
+        let fee = Math.floor(price * 0.10);
+        feeEl.textContent = price ? `¥${fee.toLocaleString()}` : '-';
+
+        // NaN防止
+        let profit = price - fee - shipping;
+        if (isNaN(profit)) profit = 0;
+        let margin = (price > 0) ? (profit / price * 100) : 0;
+
+        // 利益・利益率表示
+        if (!price) {
+          profitEl.textContent = '-';
+          marginEl.textContent = '-';
+          profitEl.classList.remove('negative','positive');
+          profitEl.classList.add('positive');
+          return;
+        }
+        profitEl.textContent = `¥${profit.toLocaleString()}`;
+        marginEl.textContent = `${margin.toFixed(1)}%`;
+
+        // 色分け
+        profitEl.classList.remove('positive', 'negative');
+        if(profit>=0){
+          profitEl.classList.add('positive');
+        } else {
+          profitEl.classList.add('negative');
+        }
+        saveLocalStorage();
+      }
+
+      // 送料選択で切り替え・リアルタイム計算
+      function handleShippingChange() {
+        if (shippingEl.value === "custom") {
+          shippingCustomEl.style.display = "inline-block";
+          // 入力非活性→活性
+          shippingCustomEl.disabled = false;
+          setTimeout(()=>shippingCustomEl.focus(), 100);
+        } else {
+          shippingCustomEl.style.display = "none";
+          shippingCustomEl.value = ""; // 値リセット
+          shippingCustomEl.disabled = true;
+        }
+        calc();
+      }
+
+      // イベント登録
+      priceEl.addEventListener('input', calc);
+      shippingEl.addEventListener('change', handleShippingChange);
+      shippingCustomEl.addEventListener('input', calc);
+
+      // ページロード時: 初期値0で一度計算
+      window.addEventListener('DOMContentLoaded', () => {
+        if (priceEl.value === "") priceEl.value = 0;
+        // shipping selectは数値初期値、空なら210で初期化
+        if (shippingEl.value === "" || shippingEl.value === null) shippingEl.value = "210";
+        // shipping custom入力欄は0
+        if (shippingCustomEl.value === "") shippingCustomEl.value = 0;
+        // カスタム選択時の表示初期化
+        if (shippingEl.value === "custom") {
+          shippingCustomEl.style.display = "inline-block";
+          shippingCustomEl.disabled = false;
+        } else {
+          shippingCustomEl.style.display = "none";
+          shippingCustomEl.disabled = true;
+        }
+        calc();
+      });
+    </script>
+  </div>
+  <script>
+    // 要素の取得
+    const priceEl = document.getElementById('price');
+    const feeEl = document.getElementById('fee-value');
+    const shippingEl = document.getElementById('shipping');
+    const profitEl = document.getElementById('profit');
+    const marginEl = document.getElementById('margin');
+
+    // 保存読み込み
+    function restoreLocalStorage() {
+      const price = localStorage.getItem('mercari_price');
+      const shipping = localStorage.getItem('mercari_shipping');
+      if (price !== null) priceEl.value = price;
+      if (shipping !== null) shippingEl.value = shipping;
+    }
+    restoreLocalStorage();
+
+    function saveLocalStorage() {
+      localStorage.setItem('mercari_price', priceEl.value);
+      localStorage.setItem('mercari_shipping', shippingEl.value);
+    }
+    
+    // 計算
+    function calc() {
+      const price = Number(priceEl.value);
+      const shipping = Number(shippingEl.value);
+
+      // 手数料10%で小数切り捨て
+      let fee = Math.floor(price * 0.10);
+      feeEl.textContent = price ? `¥${fee.toLocaleString()}` : '-';
+
+      let profit = price - fee - shipping;
+      let margin = (price > 0) ? (profit / price * 100) : 0;
+
+      // 利益・利益率表示
+      if (!price) {
+        profitEl.textContent = '-';
+        marginEl.textContent = '-';
+        profitEl.classList.remove('negative','positive');
+        profitEl.classList.add('positive');
+        return;
+      }
+      profitEl.textContent = `¥${profit.toLocaleString()}`;
+      marginEl.textContent = `${margin.toFixed(1)}%`;
+
+      // 色分け
+      profitEl.classList.remove('positive', 'negative');
+      if(profit>=0){
+        profitEl.classList.add('positive');
+      } else {
+        profitEl.classList.add('negative');
+      }
+    }
+
+    // 入力イベント
+    priceEl.addEventListener('input', ()=>{saveLocalStorage();calc()});
+    shippingEl.addEventListener('change', ()=>{saveLocalStorage();calc()});
+
+    // 初期表示
+    calc();
+  </script>
+</body>
+</html>
